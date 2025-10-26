@@ -87,7 +87,10 @@ class _ChatScreenState extends State<ChatScreen> {
             topRight: const Radius.circular(16),
             bottomLeft: isUser
               ? const Radius.circular(16)
-              : const Radius.circular(4),
+              : const Radius.circular(2),
+            bottomRight: isUser
+                ? const Radius.circular(2)
+                : const Radius.circular(16),
           ),
         ),
         child: Text(
