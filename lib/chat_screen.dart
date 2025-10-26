@@ -1,4 +1,37 @@
 import 'package:flutter/material.dart';
+import 'db_helper.dart';
+
+class ChatMessage {
+  final int? id;
+  final String sender; // the user or the AI
+  final String text;
+  final String timestamp;
+
+  ChatMessage({
+    this.id,
+    required this.sender,
+    required this.text,
+    required this.timestamp,
+  });
+
+  // Convert to map for easy to store into DB
+  Map<String, dynamic> toMap() {
+    return {
+      'sender': sender,
+      'text': text,
+      'timestamp': timestamp,
+    };
+  }
+
+  factory ChatMessage.fromMap(Map<String, dynamic> map) {
+    return ChatMessage(
+      id: map['id'],
+      sender: map['sender'],
+      text: map['text'],
+      timestamp: map['timestamp'],
+    );
+  }
+}
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -7,25 +40,36 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class ChatMessage {
-  final String sender; // the user or the AI
-  final String text;
-
-  ChatMessage({
-    required this.sender,
-    required this.text,
-  });
-}
-
 class _ChatScreenState extends State<ChatScreen> {
   // chat message lists (right now store in memory)
-  final List<ChatMessage> _messages = [
-    ChatMessage(sender: "ai", text: "Hi, this is Momo. I am listening, how are you today?"),
-  ];
+  final List<ChatMessage> _messages = [];
   // TextField controller, use for getting the context from the input
   final TextEditingController _textController = TextEditingController();
   // scrollable control
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages();
+  }
+
+  // Load messages from DB
+  Future<void> _loadMessages() async {
+    final data = await DBHelper.getAllMessages();
+    setState(() {
+      _messages.clear();
+      _messages.addAll(data.map((e) =>
+          ChatMessage.fromMap(e)).toList()
+      );
+    });
+    _scrollToBottomSoon();
+  }
+
+  // Save chat message to DB
+  Future<void> _saveMessage(ChatMessage msg) async {
+    await DBHelper.insertMessage(msg.toMap());
+  }
 
   // Function call for user send message
   void _handleSend() {
@@ -33,9 +77,13 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty) return;
 
     // 1. add this user message into _messages list
+    final now = DateTime.now().toIso8601String();
+    final userMsg = ChatMessage(sender: 'user', text: text, timestamp: now);
+
     setState(() {
-      _messages.add(ChatMessage(sender: "user", text: text));
+      _messages.add(userMsg);
     });
+    _saveMessage(userMsg);
     // clear the input field
     _textController.clear();
     // 2. auto create a fake AI reply
@@ -45,13 +93,17 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // Function call for simulating AI reply
-  void _fakeAIReply(String userText) {
+  void _fakeAIReply(String userText) async {
+    await Future.delayed(const Duration(milliseconds: 400));
     final reply = "I see. You just said \"$userText\". Can you talk more about it?";
+    final now = DateTime.now().toIso8601String();
+    final aiMsg = ChatMessage(sender: "ai", text: reply, timestamp: now);
 
     // 1. add this AI message into _messages list
     setState(() {
-      _messages.add(ChatMessage(sender: "ai", text: reply));
+      _messages.add(aiMsg);
     });
+    _saveMessage(aiMsg);
     // 2. scroll to the bottom
     _scrollToBottomSoon();
   }
@@ -166,15 +218,32 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
+        Padding(
           padding: const EdgeInsets.fromLTRB(16, 40, 16, 12),
-          alignment: Alignment.centerLeft,
-          child: const Text(
-            "Momo",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Momo Chat",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              IconButton(
+                tooltip: "Clear chat history",
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () async {
+                  // 1. Clean the message table in DB
+                  await DBHelper.clearMessages();
+                  // 2. Clean the _messages list and rebuild UI
+                  setState(() {
+                    _messages.clear();
+                  });
+                },
+              ),
+            ],
           ),
         ),
         _buildMessagesList(),
