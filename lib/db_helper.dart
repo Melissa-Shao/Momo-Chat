@@ -9,6 +9,7 @@ class DBHelper {
 
   // table name
   static const String messageTable = "messages";
+  static const String moodTable = "mood_logs";
 
   // Get the database
   static Future<Database> get database async {
@@ -25,7 +26,7 @@ class DBHelper {
     // sender TEXT: sender is the column name, TEXT is the data type: string or datetime
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE $messageTable (
@@ -35,6 +36,26 @@ class DBHelper {
           timestamp TEXT
           )
           ''');
+        await db.execute('''
+          CREATE TABLE mood_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT, 
+          mood TEXT,
+          note TEXT,
+          timestamp TEXT
+          )
+          ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('''
+        CREATE TABLE mood_logs(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          mood TEXT,
+          note TEXT,
+          timestamp TEXT
+        )
+      ''');
+        }
       },
     );
   }
@@ -55,5 +76,23 @@ class DBHelper {
   static Future<void> clearMessages() async {
     final db = await database;
     await db.delete(messageTable);
+  }
+
+  // Insert mood log
+  static Future<int> insertMood(Map<String, dynamic> data) async {
+    final db = await database;
+    return await db.insert(moodTable, data);
+  }
+
+  // Query all the mood logs
+  static Future<List<Map<String, dynamic>>> getAllMoods() async {
+    final db = await database;
+    return await db.query(moodTable, orderBy: "id DESC");
+  }
+
+  // Clean the mood_log table
+  static Future<void> clearMoods() async {
+    final db = await database;
+    await db.delete(moodTable);
   }
 }
