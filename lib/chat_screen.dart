@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'db_helper.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ChatMessage {
   final int? id;
@@ -86,10 +88,101 @@ class _ChatScreenState extends State<ChatScreen> {
     _saveMessage(userMsg);
     // clear the input field
     _textController.clear();
-    // 2. auto create a fake AI reply
-    _fakeAIReply(text);
+    // 2. call AI reply
+    _callAIReply(text);
     // 3. scroll to the bottom
     _scrollToBottomSoon();
+  }
+
+  Future<void> _callAIReply(String userText) async {
+    // 1. create system prompt
+    final systemPrompt = "You are Momo, a supportive emotional companion. "
+        "Reply in a friendly, encouraging, empathetic tone. "
+        "Keep responses short (1-3 sentences). "
+        "If the user sounds stressed or tired, acknowledge feelings first.";
+    final combinedUserMessage =
+        "User says: \"$userText\"\n"
+        "Respond as Momo, in gentle supportive style.";
+
+    // 2. Gemini API key
+    const String geminiApiKey = "AIzaSyCarJ-e0zUW4qIdeED9V03HPBUAwWguQnE";
+
+    // 3. Google Gemini endpoint
+    final uri = Uri.parse(  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=$geminiApiKey");
+    try {
+      final response = await http.post(
+        uri,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "contents": [
+            {
+              "role": "user",
+              "parts": [
+                {"text": systemPrompt},
+                {"text": combinedUserMessage},
+              ]
+            }
+          ]
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Default value for the replyText if the api not works
+        String replyText = "I'm here with you 💜";
+        try {
+          replyText = data["candidates"][0]["content"]["parts"][0]["text"];
+        } catch(parseErr) {
+          print("Parse AI reply error: $parseErr");
+        }
+        // Save to database and update UI
+        final now = DateTime.now().toIso8601String();
+        final aiMsg = ChatMessage(
+            sender: "ai",
+            text: replyText,
+            timestamp: now
+        );
+
+        setState(() {
+          _messages.add(aiMsg);
+        });
+        await _saveMessage(aiMsg);
+        _scrollToBottomSoon();
+      } else {
+        final now = DateTime.now().toIso8601String();
+        final fallbackMsg = ChatMessage(
+          sender: "ai",
+          text:
+          "Momo tried to think but got server error ${response.statusCode}. "
+              "Even if I'm confused, I'm staying with you 💜",
+          timestamp: now,
+        );
+
+        setState(() {
+          _messages.add(fallbackMsg);
+        });
+        await _saveMessage(fallbackMsg);
+        _scrollToBottomSoon();
+        print("Gemini API error ${response.statusCode}: ${response.body}");
+      }
+    } catch(e) {
+      final now = DateTime.now().toIso8601String();
+      final offlineMsg = ChatMessage(
+        sender: "ai",
+        text:
+        "I can't reach my brain in the cloud right now, but I'm still here and I care about you 💜",
+        timestamp: now,
+      );
+
+      setState(() {
+        _messages.add(offlineMsg);
+      });
+      await _saveMessage(offlineMsg);
+      _scrollToBottomSoon();
+      print("Gemini API exception: $e");
+    }
   }
 
   // Function call for simulating AI reply
