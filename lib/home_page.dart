@@ -27,13 +27,15 @@ class _HomePageState extends State<HomePage> {
             _currentIndex = newIndex;
           });
         },
+        selectedItemColor: Colors.deepPurple,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline),
+              icon: Icon(Icons.chat_bubble),
               label:"Chat",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_outline),
+            icon: Icon(Icons.favorite),
             label:"Memories",
           ),
         ],
