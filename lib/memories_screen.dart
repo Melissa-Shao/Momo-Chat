@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'chat_screen.dart';
 import 'db_helper.dart';
 import 'dart:math';
+import 'package:lottie/lottie.dart';
 
 class MoodEntry {
   final int? id;
@@ -164,21 +165,38 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
   // ----- UI helpers -----
   Widget _moodButton(String tag, String emoji, Color color) {
+    String lottiePath;
+    switch(tag) {
+      case "happy":
+        lottiePath = "assets/lottie/Great.json";
+        break;
+      case "ok":
+        lottiePath = "assets/lottie/Okay.json";
+        break;
+      default:
+        lottiePath = "assets/lottie/Bad.json";
+    }
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: color.withValues(alpha: 0.15),
+        backgroundColor: color.withValues(alpha: 0.10),
         foregroundColor: Colors.black87,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       ),
       onPressed: () => _addMood(tag),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          Lottie.asset(
+            lottiePath,
+            width: 60,
+            height: 60,
+            repeat: true,
+          ),
           Text(
-            emoji,
+            tag,
             style: const TextStyle(fontSize: 14),
           ),
         ],
@@ -210,14 +228,16 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       children:
         _moods.take(5).map((m) {
           final day = m.timestamp.substring(0, 10);
-          final emoji = m.mood == "happy"
-          ? "🙂"
+
+          String lottiePath = m.mood == "happy"
+              ? "assets/lottie/Great.json"
               : m.mood == "ok"
-              ? "😐"
-              : "☹️";
+              ? "assets/lottie/Okay.json"
+              : "assets/lottie/Bad.json";
+
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
@@ -227,8 +247,21 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               children: [
                 Text(day,
                 style: const TextStyle( fontWeight: FontWeight.w500, fontSize: 14)),
-                Text("$emoji  ${m.mood}",
-                style: const TextStyle(fontSize: 14)),
+                Row(
+                  children: [
+                    Lottie.asset(
+                      lottiePath,
+                      width: 40,
+                      height: 40,
+                      repeat: true,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      m.mood,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
               ],
             ),
           );
