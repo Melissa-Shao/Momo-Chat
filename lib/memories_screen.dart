@@ -35,6 +35,18 @@ class MoodEntry {
   }
 }
 
+class MemoryItem {
+  final String day;
+  final String text; // Momo memory description
+  final String type; // "chat" or "mood"
+
+  MemoryItem({
+    required this.day,
+    required this.text,
+    required this.type,
+  });
+}
+
 class MemoriesScreen extends StatefulWidget {
   const MemoriesScreen({super.key});
 
@@ -46,6 +58,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   List<MoodEntry> _moods = [];
   List<ChatMessage> _recentUserMessages = [];
   String _insightText = "Loading...";
+  List<MemoryItem> _memories = [];
 
   @override
   void initState() {
@@ -84,10 +97,14 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     final insight = _buildInsightFromMessages(recent20);
     final pickedForDisplay = _pickRandomMessages(recent20, 3);
 
+    // 5. Create timeline for the recent massage 
+    final memories = _buildMemories(recent20, uniqueMoods);
+
     setState(() {
       _moods = uniqueMoods;
       _recentUserMessages = pickedForDisplay;
       _insightText = insight;
+      _memories = memories;
     });
   }
 
@@ -162,6 +179,72 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     debugPrint("Inserted mood: $moodTag at $now");
     await _loadData();
   }
+
+  // This function is for Momo remembers feature
+  List<MemoryItem> _buildMemories(
+      List<ChatMessage> recentMsgs,
+      List<MoodEntry> moods,
+      ) {
+    final memories = <MemoryItem>[];
+
+    // 1) check keyword from the chat message
+    for (final msg in recentMsgs) {
+      final text = msg.text.toLowerCase();
+      final day = msg.timestamp.substring(0, 10);
+
+      if (text.contains("interview")) {
+        memories.add(MemoryItem(
+          day: day,
+          type: "chat",
+          text: "You talked about an interview. Momo is cheering for you 📅",
+        ));
+      } else if (text.contains("tired") ||
+          text.contains("exhausted") ||
+          text.contains("sleepy")) {
+        memories.add(MemoryItem(
+          day: day,
+          type: "chat",
+          text: "You said you felt tired. Momo hopes you rested well 😴",
+        ));
+      } else if (text.contains("stress")) {
+        memories.add(MemoryItem(
+          day: day,
+          type: "chat",
+          text: "You mentioned feeling stressed. Momo is here with you 💜",
+        ));
+      }
+    }
+
+    // 2) get the recently three day mood
+    for (final m in moods.take(3)) {
+      final day = m.timestamp.substring(0, 10);
+      final moodText = m.mood == "happy"
+          ? "You felt happy that day 🙂"
+          : m.mood == "ok"
+          ? "You felt calm and steady 😐"
+          : "You felt a bit down. Momo really cares about you ☁️";
+
+      memories.add(MemoryItem(
+        day: day,
+        type: "mood",
+        text: moodText,
+      ));
+    }
+
+    // 3) keep the lastest same type
+    final seen = <String>{};
+    final unique = <MemoryItem>[];
+    for (final item in memories) {
+      final key = "${item.day}-${item.type}-${item.text}";
+      if (seen.add(key)) unique.add(item);
+    }
+
+    // 4) sorting by time
+    unique.sort((a, b) => b.day.compareTo(a.day));
+    // 5) return the recent 6
+    return unique.take(6).toList();
+  }
+
 
   // ----- UI helpers -----
   Widget _moodButton(String tag, String emoji, Color color) {
@@ -246,7 +329,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(day,
-                style: const TextStyle( fontWeight: FontWeight.w500, fontSize: 14)),
+                style: const TextStyle( fontWeight: FontWeight.w500, fontSize: 14, color: Colors.black54,)),
                 Row(
                   children: [
                     Lottie.asset(
@@ -319,6 +402,78 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     );
   }
 
+  Widget _buildMemoryTimeline() {
+    if (_memories.isEmpty) {
+      return const Text(
+        "No memories yet. Chat with Momo and log moods 💜",
+        style: TextStyle(fontSize: 14, color: Colors.black54),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _memories.map((mem) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // left timeline
+            Column(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  margin: const EdgeInsets.only(top: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple.shade200,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Container(
+                  width: 2,
+                  height: 60,
+                  color: Colors.deepPurple.shade100,
+                ),
+              ],
+            ),
+            const SizedBox(width: 10),
+
+            // right card
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mem.day,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      mem.text,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -366,6 +521,13 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               ),
               const SizedBox(height: 8),
               _buildRecentMessagesPreview(),
+
+              const Text(
+                "Momo remembers…",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              _buildMemoryTimeline(),
             ],
           ),
         ),
