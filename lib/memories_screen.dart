@@ -56,6 +56,15 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     // 1. All the mood_logs, order by time DESC
     final moodRows = await DBHelper.getAllMoods();
     final moodsParsed = moodRows.map((m) => MoodEntry.fromMap(m)).toList();
+    // Remove duplicated mood in the same say
+    final seenDays = <String>{};
+    final uniqueMoods = <MoodEntry>[];
+    for (final m in moodsParsed) {
+      final day = m.timestamp.substring(0,10); // "YYYY-MM-DD"
+      if  (seenDays.add(day)) {
+        uniqueMoods.add(m);
+      }
+    }
 
     // 2. All the messages
     final msgRows = await DBHelper.getAllMessages();
@@ -75,7 +84,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     final pickedForDisplay = _pickRandomMessages(recent20, 3);
 
     setState(() {
-      _moods = moodsParsed;
+      _moods = uniqueMoods;
       _recentUserMessages = pickedForDisplay;
       _insightText = insight;
     });
