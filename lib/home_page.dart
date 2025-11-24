@@ -11,13 +11,17 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-  final List<Widget> _screens = const [ChatScreen(), MemoriesScreen(),];
+  final chatKey = GlobalKey<ChatScreenState>();
+  late final List<Widget> _screens = [ChatScreen(key: chatKey), MemoriesScreen(),];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // major screen, will change the screen based on the page index
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
 
       // bottom navbar
       bottomNavigationBar: BottomNavigationBar(
@@ -26,6 +30,11 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             _currentIndex = newIndex;
           });
+          if (newIndex == 0) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              chatKey.currentState?.focusInput();
+            });
+          }
         },
         selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,

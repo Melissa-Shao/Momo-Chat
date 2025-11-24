@@ -39,21 +39,35 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  State<ChatScreen> createState() => ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class ChatScreenState extends State<ChatScreen> {
   // chat message lists (right now store in memory)
   final List<ChatMessage> _messages = [];
   // TextField controller, use for getting the context from the input
   final TextEditingController _textController = TextEditingController();
   // scrollable control
   final ScrollController _scrollController = ScrollController();
+  // Text focus control
+  final FocusNode _inputFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _scrollController.dispose();
+    _inputFocusNode.dispose();
+    super.dispose();
+  }
+
+  void focusInput() {
+    _inputFocusNode.requestFocus();
   }
 
   // Load messages from DB
@@ -88,6 +102,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _saveMessage(userMsg);
     // clear the input field
     _textController.clear();
+    // keep cursor in input after sending
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _inputFocusNode.requestFocus();
+    });
     // 2. call AI reply
     _callAIReply(text);
     // 3. scroll to the bottom
@@ -276,6 +294,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Expanded(
                 child: TextField(
+                  focusNode: _inputFocusNode,
                   controller: _textController,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _handleSend(),
