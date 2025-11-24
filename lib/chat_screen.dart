@@ -108,7 +108,7 @@ class _ChatScreenState extends State<ChatScreen> {
     const String geminiApiKey = "AIzaSyCarJ-e0zUW4qIdeED9V03HPBUAwWguQnE";
 
     // 3. Google Gemini endpoint
-    final uri = Uri.parse(  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=$geminiApiKey");
+    final uri = Uri.parse( "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=$geminiApiKey");
     try {
       final response = await http.post(
         uri,
@@ -287,9 +287,17 @@ class _ChatScreenState extends State<ChatScreen> {
                     filled: true,
                     fillColor: Colors.grey.shade100,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade400, width: 2),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade400, width: 2),
+                    ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade400, width: 2),
                     ),
                   ),
                 ),
