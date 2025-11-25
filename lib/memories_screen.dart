@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'weather_service.dart';
 import 'chat_screen.dart';
 import 'db_helper.dart';
 import 'dart:math';
@@ -63,10 +64,15 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   List<String> _insightList = ["Loading..."];
   List<MemoryItem> _memories = [];
 
+  final WeatherService _weatherService = WeatherService();
+  Weather? _weather;
+  String? _weatherError;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadWeather();
   }
 
   Future _loadData() async {
@@ -110,6 +116,25 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       _memories = memories;
     });
   }
+
+  Future<void> _loadWeather() async {
+    try {
+      // Vancouver
+      final w = await _weatherService.fetchWeather(
+        latitude: 49.2827,
+        longitude: -123.1207,
+      );
+      setState(() {
+        _weather = w;
+        _weatherError = null;
+      });
+    } catch (e) {
+      setState(() {
+        _weatherError = e.toString();
+      });
+    }
+  }
+
 
   List<ChatMessage> _pickRandomMessages(
       List<ChatMessage> source,
@@ -397,7 +422,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       decoration: BoxDecoration(
         color: Colors.deepPurple.shade50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.deepPurple.shade100),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,6 +444,77 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       ),
     );
   }
+
+  Widget _buildWeatherCard() {
+    if (_weather == null && _weatherError == null) {
+      return const SizedBox.shrink();
+    }
+
+    if (_weatherError != null) {
+      return Text(
+        "Weather error: $_weatherError",
+        style: const TextStyle(fontSize: 12, color: Colors.redAccent),
+      );
+    }
+
+    final weather = _weather!;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Color(0xFFF1E9FF),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          // Lottie animation
+          Lottie.asset(
+            lottieFor(weather.condition),
+            width: 60,
+            height: 60,
+            repeat: true,
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Temp: ${weather.temperature.toStringAsFixed(1)} °C",
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Wind: ${weather.windSpeed.toStringAsFixed(1)} km/h",
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+              const SizedBox(height: 4),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                weatherTip(weather.condition),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildMemoryTimeline() {
     if (_memories.isEmpty) {
@@ -497,14 +592,14 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 80),
+          padding: const EdgeInsets.fromLTRB(16, 30, 16, 80),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
               const Text(
                 "Memories",
-                style: TextStyle( fontSize: 22, fontWeight: FontWeight.w600,),
+                style: TextStyle( fontSize: 32, fontFamily: "Baloo2",),
               ),
               const SizedBox(height: 4,),
               Text(
@@ -520,7 +615,16 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               ),
               const SizedBox(height: 8),
               _buildInsightsCard(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
+
+              // Weather
+              const Text(
+                "Weather Now",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,),
+              ),
+              const SizedBox(height: 8),
+              _buildWeatherCard(),
+              const SizedBox(height: 8),
 
               // Mood logger
               const Text(
@@ -531,15 +635,16 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               _buildMoodButtons(),
               const SizedBox(height: 16),
               _buildRecentMoodList(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // Recent messages
-              const Text(
-                "Recently you said...",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,),
-              ),
-              const SizedBox(height: 8),
-              _buildRecentMessagesPreview(),
+              // // Recent messages
+              // const Text(
+              //   "Recently you said...",
+              //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,),
+              // ),
+              // const SizedBox(height: 8),
+              // _buildRecentMessagesPreview(),
+              // const SizedBox(height: 24),
 
               const Text(
                 "Momo remembers…",
