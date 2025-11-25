@@ -104,6 +104,7 @@ class ChatScreenState extends State<ChatScreen> {
             index: idx,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
+            alignment: 0.2,
           );
           return;
         }
@@ -249,12 +250,34 @@ class ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
   }
 
-  void scrollToDay(String day) {
+  void scrollToDay(String day,{String? keyword}) {
     if (_messages.isEmpty) return;
 
-    final idx = _messages.indexWhere(
-          (m) => m.timestamp.startsWith(day) && m.sender == "user",
-    );
+    int idx = -1;
+
+    if (keyword != null && keyword.isNotEmpty) {
+      // if have the keyword, then find the user message which contains the keyword on that day
+      idx = _messages.indexWhere(
+            (m) => m.timestamp.startsWith(day) &&
+            m.sender == "user" &&
+            m.text.toLowerCase().contains(keyword.toLowerCase()),
+      );
+    }
+
+    // if not find the key word, then find the first user message on that day
+    if (idx == -1) {
+      idx = _messages.indexWhere(
+            (m) => m.timestamp.startsWith(day) && m.sender == "user",
+      );
+    }
+
+    // otherwise, find the first message on that day
+    if (idx == -1) {
+      idx = _messages.indexWhere(
+            (m) => m.timestamp.startsWith(day),
+      );
+    }
+
     if (idx == -1) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -270,6 +293,7 @@ class ChatScreenState extends State<ChatScreen> {
       index: index,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
+      alignment: 0.2,
     );
   }
 

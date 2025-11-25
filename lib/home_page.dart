@@ -15,13 +15,13 @@ class _HomePageState extends State<HomePage> {
   late final List<Widget> _screens = [
     ChatScreen(key: chatKey),
     MemoriesScreen(
-      onOpenChatDay: (day) {
+      onOpenChatDay: (day, {String? keyword}) {
         setState(() {
           _currentIndex = 0;
         });
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          chatKey.currentState?.scrollToDay(day);
+          chatKey.currentState?.scrollToDay(day, keyword: keyword);
           chatKey.currentState?.focusInput();
         });
       },

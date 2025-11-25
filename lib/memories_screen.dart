@@ -39,16 +39,18 @@ class MemoryItem {
   final String day;
   final String text; // Momo memory description
   final String type; // "chat" or "mood"
+  final String? keyword;
 
   MemoryItem({
     required this.day,
     required this.text,
     required this.type,
+    required this.keyword,
   });
 }
 
 class MemoriesScreen extends StatefulWidget {
-  final void Function(String day) onOpenChatDay;
+  final void Function(String day, {String? keyword}) onOpenChatDay;
   const MemoriesScreen({super.key, required this.onOpenChatDay});
 
   @override
@@ -198,6 +200,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
           day: day,
           type: "chat",
           text: "You talked about an interview. Momo is cheering for you 📅",
+          keyword: "interview",
         ));
       } else if (text.contains("tired") ||
           text.contains("exhausted") ||
@@ -206,12 +209,15 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
           day: day,
           type: "chat",
           text: "You said you felt tired. Momo hopes you rested well 😴",
+          keyword: text.contains("tired") ? "tired" :
+          text.contains("exhausted") ? "exhausted" : "sleepy",
         ));
       } else if (text.contains("stress")) {
         memories.add(MemoryItem(
           day: day,
           type: "chat",
           text: "You mentioned feeling stressed. Momo is here with you 💜",
+          keyword: "stress",
         ));
       }
     }
@@ -229,6 +235,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
         day: day,
         type: "mood",
         text: moodText,
+        keyword: null,
       ));
     }
 
@@ -444,7 +451,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 borderRadius: BorderRadius.circular(12),
                 onTap: mem.type == "chat"
                     ? () {
-                  widget.onOpenChatDay(mem.day);  // 只给 chat 类型跳
+                  widget.onOpenChatDay(mem.day, keyword: mem.keyword);
                    } : null,
                 child: Opacity(
                   opacity: mem.type == "chat" ? 1.0 : 0.6,
