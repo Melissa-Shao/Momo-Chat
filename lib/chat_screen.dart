@@ -418,7 +418,14 @@ class ChatScreenState extends State<ChatScreen> {
 
                     IconButton(
                       tooltip: "Clear chat history",
-                      icon: const Icon(Icons.delete_outline),
+                      icon: const Icon(Icons.delete_outline_rounded, size: 22),
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.deepPurple.shade50,
+                        foregroundColor: Colors.deepPurple.shade500,
+                        shape: CircleBorder(),
+                      ),
                       onPressed: () async {
                         // 1. Clean the message table in DB
                         await DBHelper.clearMessages();

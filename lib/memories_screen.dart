@@ -550,7 +550,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
               //Insights
               const Text(
-                "Emotional Insights",
+                "Your Mood Highlights",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,),
               ),
               const SizedBox(height: 8),
@@ -559,7 +559,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
               // Weather
               const Text(
-                "Weather Now",
+                "Sky Mood Today",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,),
               ),
               const SizedBox(height: 8),
@@ -568,7 +568,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
               // Mood logger
               const Text(
-                "How do you feel today?",
+                "Your Mood Today",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,),
               ),
               const SizedBox(height: 8),
@@ -578,7 +578,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               const SizedBox(height: 16),
 
               const Text(
-                "Momo remembers…",
+                "Momo Remembers",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
