@@ -60,7 +60,7 @@ class MemoriesScreen extends StatefulWidget {
 class _MemoriesScreenState extends State<MemoriesScreen> {
   List<MoodEntry> _moods = [];
   List<ChatMessage> _recentUserMessages = [];
-  String _insightText = "Loading...";
+  List<String> _insightList = ["Loading..."];
   List<MemoryItem> _memories = [];
 
   @override
@@ -106,7 +106,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     setState(() {
       _moods = uniqueMoods;
       _recentUserMessages = pickedForDisplay;
-      _insightText = insight;
+      _insightList = insight;
       _memories = memories;
     });
   }
@@ -140,9 +140,9 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
   // This function is for generating the mood summary
   // The method is making a simple keyword detection
-  String _buildInsightFromMessages(List<ChatMessage> msgs) {
+  List<String> _buildInsightFromMessages(List<ChatMessage> msgs) {
     if (msgs.isEmpty) {
-      return "Momo is still getting to know you 💜";
+      return ["Momo is still getting to know you 💜"];
     }
 
     final fullText = msgs.map((m) => m.text).join(" ").toLowerCase();
@@ -157,16 +157,16 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       bullets.add("You've been saying you feel tired lately. Momo really cares about you — remember to rest, okay?");
     }
     if (feelsStress) {
-      bullets.add("You’ve mentioned feeling stressed. Momo is always here to support you 💜");
+      bullets.add("You’ve mentioned feeling stressed. Momo is always here to support you!");
     }
     if (hasInterview) {
-      bullets.add("You talked about an interview or something important coming up. Momo wishes you the best of luck 📅");
+      bullets.add("You talked about an interview or something important coming up. Momo wishes you the best of luck!");
     }
     if (bullets.isEmpty) {
       bullets.add("Momo has been listening to you carefully ✨");
     }
 
-    return bullets.join("\n");
+    return bullets;
   }
 
   // This function is called when user click the 🙂😐☹️ emoji: write the mood into DB and update the UI
@@ -399,13 +399,24 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.deepPurple.shade100),
       ),
-      child: Text(
-        _insightText,
-        style: const TextStyle(
-          fontSize: 15,
-          height: 1.4,
-          color: Colors.black87,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: List.generate(_insightList.length, (i) {
+          final text = _insightList[i];
+          final isLast = i == _insightList.length - 1;
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+            child: Text(
+              "🟣 $text",
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.4,
+                color: Colors.black87,
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
