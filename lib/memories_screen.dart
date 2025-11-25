@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'weather_service.dart';
 import 'chat_screen.dart';
 import 'db_helper.dart';
-import 'dart:math';
 import 'package:lottie/lottie.dart';
 
 class MoodEntry {
@@ -60,7 +59,6 @@ class MemoriesScreen extends StatefulWidget {
 
 class _MemoriesScreenState extends State<MemoriesScreen> {
   List<MoodEntry> _moods = [];
-  List<ChatMessage> _recentUserMessages = [];
   List<String> _insightList = ["Loading..."];
   List<MemoryItem> _memories = [];
 
@@ -104,14 +102,12 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
     // 4. Generate insight using the lastest user messages
     final insight = _buildInsightFromMessages(recent20);
-    final pickedForDisplay = _pickRandomMessages(recent20, 3);
 
     // 5. Create timeline for the recent massage 
     final memories = _buildMemories(recent20, uniqueMoods);
 
     setState(() {
       _moods = uniqueMoods;
-      _recentUserMessages = pickedForDisplay;
       _insightList = insight;
       _memories = memories;
     });
@@ -133,34 +129,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
         _weatherError = e.toString();
       });
     }
-  }
-
-
-  List<ChatMessage> _pickRandomMessages(
-      List<ChatMessage> source,
-      int count,
-      ) {
-    if (source.isEmpty) return [];
-
-    // if less than the count, just return
-    if (source.length <= count) {
-      return List<ChatMessage>.from(source);
-    }
-
-    // chose random count none duplicated message
-    final rand = Random();
-    final picked = <ChatMessage>[];
-    final usedIndexes = <int>{};
-
-    while (picked.length < count && usedIndexes.length < source.length) {
-      final i = rand.nextInt(source.length); // 0 .. length-1
-      if (!usedIndexes.contains(i)) {
-        usedIndexes.add(i);
-        picked.add(source[i]);
-      }
-    }
-
-    return picked;
   }
 
   // This function is for generating the mood summary
@@ -382,34 +350,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
             ),
           );
         }).toList(),
-    );
-  }
-
-  // Recent user's message (most 3)
-  Widget _buildRecentMessagesPreview() {
-    if (_recentUserMessages.isEmpty) {
-      return const Text(
-        "You haven't chatted with Momo yet.\nGo tell her how you're feeling 💬",
-        style: TextStyle(fontSize: 14, color: Colors.black54),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: _recentUserMessages.map((msg) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            msg.text,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-          ),
-        );
-      }).toList(),
     );
   }
 
@@ -636,15 +576,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               const SizedBox(height: 16),
               _buildRecentMoodList(),
               const SizedBox(height: 16),
-
-              // // Recent messages
-              // const Text(
-              //   "Recently you said...",
-              //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600,),
-              // ),
-              // const SizedBox(height: 8),
-              // _buildRecentMessagesPreview(),
-              // const SizedBox(height: 24),
 
               const Text(
                 "Momo remembers…",
