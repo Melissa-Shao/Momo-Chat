@@ -407,16 +407,13 @@ class ChatScreenState extends State<ChatScreen> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 40, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       "Momo Chat",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle( fontSize: 32, fontFamily: "Baloo2",),
                     ),
 
                     IconButton(
