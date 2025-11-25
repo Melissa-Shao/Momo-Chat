@@ -12,7 +12,21 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   final chatKey = GlobalKey<ChatScreenState>();
-  late final List<Widget> _screens = [ChatScreen(key: chatKey), MemoriesScreen(),];
+  late final List<Widget> _screens = [
+    ChatScreen(key: chatKey),
+    MemoriesScreen(
+      onOpenChatDay: (day) {
+        setState(() {
+          _currentIndex = 0;
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          chatKey.currentState?.scrollToDay(day);
+          chatKey.currentState?.focusInput();
+        });
+      },
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {

@@ -48,7 +48,8 @@ class MemoryItem {
 }
 
 class MemoriesScreen extends StatefulWidget {
-  const MemoriesScreen({super.key});
+  final void Function(String day) onOpenChatDay;
+  const MemoriesScreen({super.key, required this.onOpenChatDay});
 
   @override
   State<MemoriesScreen> createState() => _MemoriesScreenState();
@@ -439,32 +440,32 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
             // right card
             Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      mem.day,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w500,
-                      ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: mem.type == "chat"
+                    ? () {
+                  widget.onOpenChatDay(mem.day);  // 只给 chat 类型跳
+                   } : null,
+                child: Opacity(
+                  opacity: mem.type == "chat" ? 1.0 : 0.6,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      mem.text,
-                      style: const TextStyle(fontSize: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(mem.day, style: const TextStyle( fontWeight: FontWeight.w500, fontSize: 14, color: Colors.black54,)),
+                        const SizedBox(height: 4),
+                        Text(mem.text, style: const TextStyle(fontSize: 14)),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                )
               ),
             ),
           ],

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'db_helper.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
 
 class ChatMessage {
   final int? id;
@@ -36,7 +38,8 @@ class ChatMessage {
 }
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final String? targetDay;
+  const ChatScreen({super.key, this.targetDay});
 
   @override
   State<ChatScreen> createState() => ChatScreenState();
@@ -47,10 +50,11 @@ class ChatScreenState extends State<ChatScreen> {
   final List<ChatMessage> _messages = [];
   // TextField controller, use for getting the context from the input
   final TextEditingController _textController = TextEditingController();
-  // scrollable control
-  final ScrollController _scrollController = ScrollController();
   // Text focus control
   final FocusNode _inputFocusNode = FocusNode();
+  // Controller for the memories timeline
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
 
   @override
   void initState() {
@@ -61,7 +65,6 @@ class ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _scrollController.dispose();
     _inputFocusNode.dispose();
     super.dispose();
   }
@@ -70,16 +73,43 @@ class ChatScreenState extends State<ChatScreen> {
     _inputFocusNode.requestFocus();
   }
 
-  // Load messages from DB
+  void _scrollToBottom() {
+    if (_messages.isEmpty || !_itemScrollController.isAttached) return;
+
+    _itemScrollController.scrollTo(
+      index: _messages.length - 1,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
   Future<void> _loadMessages() async {
     final data = await DBHelper.getAllMessages();
+
     setState(() {
-      _messages.clear();
-      _messages.addAll(data.map((e) =>
-          ChatMessage.fromMap(e)).toList()
-      );
+      _messages
+        ..clear()
+        ..addAll(data.map((e) => ChatMessage.fromMap(e)));
     });
-    _scrollToBottomSoon();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_messages.isEmpty || !_itemScrollController.isAttached) return;
+
+      if (widget.targetDay != null) {
+        final day = widget.targetDay!;
+        final idx = _messages.indexWhere((m) => m.timestamp.startsWith(day));
+
+        if (idx != -1) {
+          _itemScrollController.scrollTo(
+            index: idx,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+          return;
+        }
+      }
+      _scrollToBottom();
+    });
   }
 
   // Save chat message to DB
@@ -109,7 +139,7 @@ class ChatScreenState extends State<ChatScreen> {
     // 2. call AI reply
     _callAIReply(text);
     // 3. scroll to the bottom
-    _scrollToBottomSoon();
+    _scrollToBottom();
   }
 
   Future<void> _callAIReply(String userText) async {
@@ -167,7 +197,7 @@ class ChatScreenState extends State<ChatScreen> {
           _messages.add(aiMsg);
         });
         await _saveMessage(aiMsg);
-        _scrollToBottomSoon();
+        _scrollToBottom();
       } else {
         final now = DateTime.now().toIso8601String();
         final fallbackMsg = ChatMessage(
@@ -182,7 +212,7 @@ class ChatScreenState extends State<ChatScreen> {
           _messages.add(fallbackMsg);
         });
         await _saveMessage(fallbackMsg);
-        _scrollToBottomSoon();
+        _scrollToBottom();
         print("Gemini API error ${response.statusCode}: ${response.body}");
       }
     } catch(e) {
@@ -198,7 +228,7 @@ class ChatScreenState extends State<ChatScreen> {
         _messages.add(offlineMsg);
       });
       await _saveMessage(offlineMsg);
-      _scrollToBottomSoon();
+      _scrollToBottom();
       print("Gemini API exception: $e");
     }
   }
@@ -216,20 +246,31 @@ class ChatScreenState extends State<ChatScreen> {
     });
     _saveMessage(aiMsg);
     // 2. scroll to the bottom
-    _scrollToBottomSoon();
+    _scrollToBottom();
   }
 
-  // Helper Function call for auto scroll the chat to the bottom
-  void _scrollToBottomSoon() {
+  void scrollToDay(String day) {
+    if (_messages.isEmpty) return;
+
+    final idx = _messages.indexWhere(
+          (m) => m.timestamp.startsWith(day) && m.sender == "user",
+    );
+    if (idx == -1) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent + 80,
-            duration: const Duration(milliseconds: 300),
-            curve:Curves.easeOut,
-        );
-      }
+      _safeScrollTo(idx);
     });
+  }
+
+  void _safeScrollTo(int index) {
+    if (!_itemScrollController.isAttached) return;
+    if (index < 0 || index >= _messages.length) return;
+
+    _itemScrollController.scrollTo(
+      index: index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   // UI bubble of a single message
@@ -267,8 +308,9 @@ class ChatScreenState extends State<ChatScreen> {
   // UI of chat message list area
   Widget _buildMessagesList() {
     return Expanded(
-        child: ListView.builder(
-          controller: _scrollController,
+        child: ScrollablePositionedList.builder(
+          itemScrollController: _itemScrollController,
+          itemPositionsListener: _itemPositionsListener,
           itemCount: _messages.length,
           itemBuilder: (context, index) {
             final msg = _messages[index];
@@ -336,39 +378,43 @@ class ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 40, 16, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Scaffold(
+      body: SafeArea(
+          child: Column(
             children: [
-              const Text(
-                "Momo Chat",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 40, 16, 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Momo Chat",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    IconButton(
+                      tooltip: "Clear chat history",
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () async {
+                        // 1. Clean the message table in DB
+                        await DBHelper.clearMessages();
+                        // 2. Clean the _messages list and rebuild UI
+                        setState(() {
+                          _messages.clear();
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ),
-
-              IconButton(
-                tooltip: "Clear chat history",
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () async {
-                  // 1. Clean the message table in DB
-                  await DBHelper.clearMessages();
-                  // 2. Clean the _messages list and rebuild UI
-                  setState(() {
-                    _messages.clear();
-                  });
-                },
-              ),
+              _buildMessagesList(),
+              _buildInputArea(),
             ],
-          ),
-        ),
-        _buildMessagesList(),
-        _buildInputArea(),
-      ],
+          )
+      )
     );
   }
 }
