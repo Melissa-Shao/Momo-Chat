@@ -234,22 +234,6 @@ class ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // Function call for simulating AI reply
-  void _fakeAIReply(String userText) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    final reply = "I see. You just said \"$userText\". Can you talk more about it?";
-    final now = DateTime.now().toIso8601String();
-    final aiMsg = ChatMessage(sender: "ai", text: reply, timestamp: now);
-
-    // 1. add this AI message into _messages list
-    setState(() {
-      _messages.add(aiMsg);
-    });
-    _saveMessage(aiMsg);
-    // 2. scroll to the bottom
-    _scrollToBottom();
-  }
-
   void scrollToDay(String day,{String? keyword}) {
     if (_messages.isEmpty) return;
 
