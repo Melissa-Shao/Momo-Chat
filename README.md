@@ -153,3 +153,12 @@ someone who listens, remembers, and cares.
 - Voice input / speech-to-text
 - Smarter NLP (beyond keyword matching)
 - Push notifications for mood reminders  
+
+---
+
+## 👤 Author
+
+**Melissa Shao**
+
+[![GitHub](https://img.shields.io/badge/GitHub-Profile-blue?logo=github)](https://github.com/Melissa-Shao)
+
