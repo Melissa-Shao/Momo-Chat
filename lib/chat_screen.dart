@@ -3,7 +3,7 @@ import 'db_helper.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ChatMessage {
   final int? id;
@@ -154,8 +154,22 @@ class ChatScreenState extends State<ChatScreen> {
         "Respond as Momo, in gentle supportive style.";
 
     // 2. Gemini API key
-    const String geminiApiKey = "AIzaSyCarJ-e0zUW4qIdeED9V03HPBUAwWguQnE";
+    final geminiApiKey = dotenv.env['GEMINI_API_KEY'];
+    if (geminiApiKey == null || geminiApiKey.isEmpty) {
+      final now = DateTime.now().toIso8601String();
+      final errorMsg = ChatMessage(
+        sender: "ai",
+        text: "API key is missing. Please check your .env file.",
+        timestamp: now,
+      );
 
+      setState(() {
+        _messages.add(errorMsg);
+      });
+      await _saveMessage(errorMsg);
+      _scrollToBottom();
+      return;
+    }
     // 3. Google Gemini endpoint
     final uri = Uri.parse( "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=$geminiApiKey");
     try {
