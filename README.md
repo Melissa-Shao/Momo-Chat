@@ -81,7 +81,6 @@ Here are some screenshots demonstrating the core features of Momo Chat:
 
 ### 🧠 Momo Memories
 ![Memories](assets/images/memories1.png)
-![Memories](assets/images/memories1.png)
 
 
 ## 💾 Persistent Storage
